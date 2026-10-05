@@ -1,96 +1,117 @@
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { turnosService } from '../services/turnos.service.js';
-import { normalizarTurno } from '../utils/normalizador.js';
-import type { TurnoCrudo, TurnoActualizacion } from '../models/turno.model.js';
+import { AppError } from '../middleware/errorHandler.js';
+import {
+  crearTurnoSchema,
+  actualizarTurnoSchema,
+  filtroTurnosSchema,
+} from '../schemas/turno.schema.js';
+import type { Turno } from '../models/turno.model.js';
 
 /**
- * GET /turnos
+ * Convierte el input validado por Zod (especialidad en PascalCase)
+ * al dominio interno (especialidad en minúsculas sin tildes).
  */
-export const getTurnos = (_req: Request, res: Response): void => {
-  const turnos = turnosService.listar();
-  res.status(200).json(turnos);
+const toDomain = (input: ReturnType<typeof crearTurnoSchema.parse>): Omit<Turno, 'id'> => {
+  const map: Record<string, Turno['especialidad']> = {
+    'Clínica médica': 'clinica medica',
+    Pediatría: 'pediatria',
+    Odontología: 'odontologia',
+    Nutrición: 'nutricion',
+  };
+  return {
+    paciente: input.paciente,
+    documento: input.documento,
+    especialidad: map[input.especialidad],
+    fecha: input.fecha,
+    hora: input.hora,
+    confirmado: input.confirmado,
+    ...(input.observaciones ? { observaciones: input.observaciones } : {}),
+  };
 };
 
-/**
- * GET /turnos/:id
- */
-export const getTurnoPorId = (req: Request, res: Response): void => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    res.status(400).json({ error: 'El id debe ser un entero positivo.' });
-    return;
-  }
-
-  const turno = turnosService.obtenerPorId(id);
-  if (!turno) {
-    res.status(404).json({ error: `Turno con id ${id} no encontrado.` });
-    return;
-  }
-
-  res.status(200).json(turno);
-};
-
-/**
- * POST /turnos
- */
-export const crearTurno = (req: Request, res: Response): void => {
+export const getTurnos = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    const body = req.body as TurnoCrudo;
-    const normalizado = normalizarTurno({ ...body, id: body.id ?? 1 });
-    if (!normalizado) {
-      res.status(400).json({ error: 'Los datos del turno no cumplen con el formato esperado.' });
-      return;
+    const filtros = filtroTurnosSchema.parse(req.query);
+    const turnos = turnosService.listar(filtros);
+    res.status(200).json(turnos);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getTurnoPorId = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
     }
-
-    // El id lo asigna el servicio; sacamos el id normalizado y pasamos el resto.
-    const { id: _descartado, ...sinId } = normalizado;
-    void _descartado;
-    const creado = turnosService.crear(sinId);
-    res.status(201).json(creado);
-  } catch (error) {
-    console.error('[crearTurno] Error:', error);
-    res.status(500).json({ error: 'Error interno al crear el turno.' });
+    const turno = turnosService.obtenerPorId(id);
+    if (!turno) {
+      throw new AppError(404, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
+    }
+    res.status(200).json(turno);
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * PUT /turnos/:id
- */
-export const actualizarTurno = (req: Request, res: Response): void => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    res.status(400).json({ error: 'El id debe ser un entero positivo.' });
-    return;
-  }
-
+export const crearTurno = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    const cambios = req.body as TurnoActualizacion;
-    const actualizado = turnosService.actualizar(id, cambios);
+    const data = crearTurnoSchema.parse(req.body);
+    const creado = turnosService.crear(toDomain(data));
+    res.status(201).json(creado);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const actualizarTurno = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+    }
+    const cambios = actualizarTurnoSchema.parse(req.body);
+    const partial: Partial<Omit<Turno, 'id'>> = {};
+    if (cambios.paciente !== undefined) partial.paciente = cambios.paciente;
+    if (cambios.documento !== undefined) partial.documento = cambios.documento;
+    if (cambios.especialidad !== undefined) {
+      const map: Record<string, Turno['especialidad']> = {
+        'Clínica médica': 'clinica medica',
+        Pediatría: 'pediatria',
+        Odontología: 'odontologia',
+        Nutrición: 'nutricion',
+      };
+      partial.especialidad = map[cambios.especialidad];
+    }
+    if (cambios.fecha !== undefined) partial.fecha = cambios.fecha;
+    if (cambios.hora !== undefined) partial.hora = cambios.hora;
+    if (cambios.confirmado !== undefined) partial.confirmado = cambios.confirmado;
+    if (cambios.observaciones !== undefined) partial.observaciones = cambios.observaciones;
+
+    const actualizado = turnosService.actualizar(id, partial);
     if (!actualizado) {
-      res.status(404).json({ error: `Turno con id ${id} no encontrado.` });
-      return;
+      throw new AppError(404, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
     }
     res.status(200).json(actualizado);
-  } catch (error) {
-    console.error('[actualizarTurno] Error:', error);
-    res.status(500).json({ error: 'Error interno al actualizar el turno.' });
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * DELETE /turnos/:id
- */
-export const eliminarTurno = (req: Request, res: Response): void => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    res.status(400).json({ error: 'El id debe ser un entero positivo.' });
-    return;
+export const eliminarTurno = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+    }
+    const eliminado = turnosService.eliminar(id);
+    if (!eliminado) {
+      throw new AppError(404, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
+    }
+    res.status(204).send();
+  } catch (err) {
+    next(err);
   }
-
-  const eliminado = turnosService.eliminar(id);
-  if (!eliminado) {
-    res.status(404).json({ error: `Turno con id ${id} no encontrado.` });
-    return;
-  }
-  res.status(200).json({ mensaje: `Turno ${id} eliminado correctamente.` });
 };

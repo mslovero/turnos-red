@@ -3,33 +3,30 @@ import { createServer } from 'node:http';
 import { Server as SocketIOServer } from 'socket.io';
 import { env } from './config/env.js';
 import { turnosRouter } from './routes/turnos.routes.js';
+import { medicosRouter } from './routes/medicos.routes.js';
 import { turnosService } from './services/turnos.service.js';
 import { eventBus, TURNO_EVENTS } from './events/eventBus.js';
 import { leerTurnosCrudos } from './utils/fileReader.js';
 import { normalizarLote } from './utils/normalizador.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 async function bootstrap(): Promise<void> {
   const app = express();
   app.use(express.json());
 
-  // Health-check básico
   app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 
   // Rutas REST
   app.use('/turnos', turnosRouter);
+  app.use('/medicos', medicosRouter);
 
-  // Manejador global de 404
-  app.use((_req, res) => {
-    res.status(404).json({ error: 'Recurso no encontrado.' });
-  });
+  // 404 + manejador global de errores (SIEMPRE al final)
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
-  // Servidor HTTP compartido entre Express y Socket.IO
   const httpServer = createServer(app);
-  const io = new SocketIOServer(httpServer, {
-    cors: { origin: '*' },
-  });
+  const io = new SocketIOServer(httpServer, { cors: { origin: '*' } });
 
-  // Puente: EventEmitter interno -> Socket.IO
   eventBus.on(TURNO_EVENTS.CREADO, (turno) => {
     io.emit('turno:nuevo', turno);
     console.log(`[socket] turno:nuevo emitido (id=${turno.id})`);
@@ -50,7 +47,6 @@ async function bootstrap(): Promise<void> {
     });
   });
 
-  // Carga inicial: lee turnos crudos, los normaliza y los deja en memoria
   const crudos = await leerTurnosCrudos(env.TURNOS_FILE);
   const { turnos } = normalizarLote(crudos);
   turnosService.cargarInicial(turnos);

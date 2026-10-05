@@ -1,0 +1,433 @@
+{
+  "info": {
+    "name": "TurnosRed API",
+    "description": "Colección de pruebas para el backend TurnosRed (Actividad 2 - Integraciones Web). Incluye CRUD de /turnos y /medicos, filtros por query params, validaciones Zod y manejo estandarizado de errores.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "turnoId",
+      "value": "101",
+      "type": "string"
+    },
+    {
+      "key": "medicoId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Turnos",
+      "item": [
+        {
+          "name": "GET /turnos - Listar todos (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON array', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.be.an('array');",
+                  "});",
+                  "pm.test('Cada turno tiene los campos esperados', () => {",
+                  "  const data = pm.response.json();",
+                  "  if (data.length > 0) {",
+                  "    const t = data[0];",
+                  "    pm.expect(t).to.have.property('id');",
+                  "    pm.expect(t).to.have.property('paciente');",
+                  "    pm.expect(t).to.have.property('especialidad');",
+                  "    pm.expect(t).to.have.property('fecha');",
+                  "  }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "GET /turnos?especialidad=Pediatría - Filtro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Todos los turnos son de pediatria', () => {",
+                  "  const data = pm.response.json();",
+                  "  data.forEach(t => pm.expect(t.especialidad).to.eql('pediatria'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/turnos?especialidad=Pediatría",
+              "host": ["{{baseUrl}}"],
+              "path": ["turnos"],
+              "query": [{ "key": "especialidad", "value": "Pediatría" }]
+            }
+          }
+        },
+        {
+          "name": "GET /turnos?fecha=14/08/2026 - Filtro por fecha",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Todos los turnos son del 2026-08-14', () => {",
+                  "  pm.response.json().forEach(t => pm.expect(t.fecha).to.eql('2026-08-14'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/turnos?fecha=14/08/2026",
+              "host": ["{{baseUrl}}"],
+              "path": ["turnos"],
+              "query": [{ "key": "fecha", "value": "14/08/2026" }]
+            }
+          }
+        },
+        {
+          "name": "GET /turnos/:id - Obtener por id (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has id', () => pm.expect(pm.response.json()).to.have.property('id'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/turnos/{{turnoId}}"
+          }
+        },
+        {
+          "name": "GET /turnos/9999 - Not Found (Bad Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error estandarizado', () => {",
+                  "  const err = pm.response.json();",
+                  "  pm.expect(err).to.have.property('status', 404);",
+                  "  pm.expect(err).to.have.property('code', 'NOT_FOUND');",
+                  "  pm.expect(err).to.have.property('message');",
+                  "  pm.expect(err).to.have.property('details');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/turnos/9999"
+          }
+        },
+        {
+          "name": "POST /turnos - Crear (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Response has id', () => pm.expect(pm.response.json()).to.have.property('id'));",
+                  "pm.collectionVariables.set('turnoId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/turnos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paciente\": \"Juan Pérez\",\n  \"documento\": \"35123456\",\n  \"especialidad\": \"Clínica médica\",\n  \"fecha\": \"2026-08-20\",\n  \"hora\": \"11:30\",\n  \"confirmado\": true,\n  \"observaciones\": \"Primera consulta\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /turnos - Validación Zod (Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error de validación', () => {",
+                  "  const err = pm.response.json();",
+                  "  pm.expect(err.code).to.eql('VALIDATION_ERROR');",
+                  "  pm.expect(err.details).to.be.an('array').that.is.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/turnos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paciente\": \"\",\n  \"documento\": \"abc\",\n  \"especialidad\": \"invalida\",\n  \"fecha\": \"20-08-2026\",\n  \"hora\": \"25:99\",\n  \"confirmado\": \"si\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /turnos/:id - Actualizar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Observaciones actualizadas', () => {",
+                  "  pm.expect(pm.response.json().observaciones).to.include('Reprogramado');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/turnos/{{turnoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirmado\": false,\n  \"observaciones\": \"Reprogramado para la próxima semana\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /turnos/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/turnos/{{turnoId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Médicos",
+      "item": [
+        {
+          "name": "GET /medicos - Listar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/medicos" }
+        },
+        {
+          "name": "GET /medicos?especialidad=Odontología&disponible=true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Todos los medicos cumplen el filtro', () => {",
+                  "  pm.response.json().forEach(m => {",
+                  "    pm.expect(m.especialidad).to.eql('Odontología');",
+                  "    pm.expect(m.disponible).to.eql(true);",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/medicos?especialidad=Odontología&disponible=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["medicos"],
+              "query": [
+                { "key": "especialidad", "value": "Odontología" },
+                { "key": "disponible", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /medicos/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has id', () => pm.expect(pm.response.json()).to.have.property('id'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/medicos/{{medicoId}}" }
+        },
+        {
+          "name": "GET /medicos/9999 - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error estandarizado', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('NOT_FOUND');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/medicos/9999" }
+        },
+        {
+          "name": "POST /medicos - Crear",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Response has id', () => pm.expect(pm.response.json()).to.have.property('id'));",
+                  "pm.collectionVariables.set('medicoId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/medicos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Diego\",\n  \"apellido\": \"Sosa\",\n  \"matricula\": \"MP-99999\",\n  \"documento\": \"36123456\",\n  \"especialidad\": \"Pediatría\",\n  \"disponible\": true,\n  \"email\": \"dsosa@turnosred.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /medicos - Validación Zod",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('VALIDATION_ERROR', () => pm.expect(pm.response.json().code).to.eql('VALIDATION_ERROR'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/medicos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"\",\n  \"matricula\": \"\",\n  \"documento\": \"abc\",\n  \"especialidad\": \"otra\",\n  \"disponible\": \"si\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /medicos/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('disponible actualizado', () => pm.expect(pm.response.json().disponible).to.eql(false));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/medicos/{{medicoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disponible\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /medicos/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/medicos/{{medicoId}}" }
+        }
+      ]
+    }
+  ]
+}
