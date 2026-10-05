@@ -1,0 +1,31 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+
+# Variables de entorno (información sensible)
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/launch.json
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Yarn / pnpm (solo usamos npm)
+yarn.lock
+pnpm-lock.yaml
+.pnp.*
+
+# Coverage
+coverage/
+.nyc_output/

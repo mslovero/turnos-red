@@ -1,0 +1,76 @@
+[
+  {
+    "id": "101",
+    "paciente": "   María Gómez ",
+    "documento": 28456123,
+    "especialidad": "CLÍNICA MÉDICA",
+    "fecha": "12/08/2026",
+    "hora": "09:30",
+    "confirmado": "si",
+    "observaciones": "Primera consulta"
+  },
+  {
+    "id": "102",
+    "paciente": "   Carlos Ruiz ",
+    "documento": 31654210,
+    "especialidad": "PEDIATRÍA",
+    "fecha": "14/08/2026",
+    "hora": "10.00",
+    "confirmado": "si"
+  },
+  {
+    "id": 103,
+    "paciente": "Lucía Fernández",
+    "documento": "29887654",
+    "especialidad": "odontologia",
+    "fecha": "2026-08-15",
+    "hora": "11:15",
+    "confirmado": true
+  },
+  {
+    "id": "104",
+    "paciente": "Pablo Torres",
+    "documento": 30123456,
+    "especialidad": "Nutrición",
+    "fecha": "16/08/2026",
+    "hora": "14h30",
+    "confirmado": "no"
+  },
+  {
+    "id": "0",
+    "paciente": "Registro inválido - id cero",
+    "documento": 11111111,
+    "especialidad": "pediatria",
+    "fecha": "17/08/2026",
+    "hora": "08:00",
+    "confirmado": "no"
+  },
+  {
+    "id": "106",
+    "paciente": "",
+    "documento": 22222222,
+    "especialidad": "pediatria",
+    "fecha": "17/08/2026",
+    "hora": "08:00",
+    "confirmado": "no"
+  },
+  {
+    "id": "107",
+    "paciente": "Ana López",
+    "documento": 33333333,
+    "especialidad": "especialidad-inexistente",
+    "fecha": "17/08/2026",
+    "hora": "08:00",
+    "confirmado": "no"
+  },
+  {
+    "id": "108",
+    "paciente": "Jorge Pérez",
+    "documento": 34567890,
+    "especialidad": "clinica medica",
+    "fecha": "18/08/2026",
+    "hora": "16:45",
+    "confirmado": "yes",
+    "observaciones": "Control anual"
+  }
+]
