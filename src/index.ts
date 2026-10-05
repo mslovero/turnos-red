@@ -8,20 +8,23 @@ import { turnosService } from './services/turnos.service.js';
 import { eventBus, TURNO_EVENTS } from './events/eventBus.js';
 import { leerTurnosCrudos } from './utils/fileReader.js';
 import { normalizarLote } from './utils/normalizador.js';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { getBienvenida, notFoundController } from './controllers/general.controller.js';
 
 async function bootstrap(): Promise<void> {
   const app = express();
   app.use(express.json());
 
+  // Endpoints generales (Hello World + health)
+  app.get('/', getBienvenida);
   app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 
   // Rutas REST
   app.use('/turnos', turnosRouter);
   app.use('/medicos', medicosRouter);
 
-  // 404 + manejador global de errores (SIEMPRE al final)
-  app.use(notFoundHandler);
+  // 404 general + manejador global de errores (SIEMPRE al final)
+  app.use(notFoundController);
   app.use(errorHandler);
 
   const httpServer = createServer(app);

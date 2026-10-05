@@ -7,71 +7,104 @@ import {
   filtroMedicosSchema,
 } from '../schemas/medico.schema.js';
 
-export const getMedicos = (req: Request, res: Response, next: NextFunction): void => {
+export const getMedicos = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 200;
   try {
     const filtros = filtroMedicosSchema.parse(req.query);
     const medicos = medicosService.listar(filtros);
-    res.status(200).json(medicos);
+    return res.status(status).json(medicos);
   } catch (err) {
-    next(err);
+    status = 500;
+    return next(err);
   }
 };
 
-export const getMedicoPorId = (req: Request, res: Response, next: NextFunction): void => {
+export const getMedicoPorId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 200;
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+      status = 400;
+      throw new AppError(status, 'INVALID_ID', 'El id debe ser un entero positivo.');
     }
     const medico = medicosService.obtenerPorId(id);
     if (!medico) {
-      throw new AppError(404, 'NOT_FOUND', `Médico con id ${id} no encontrado.`);
+      status = 404;
+      throw new AppError(status, 'NOT_FOUND', `Médico con id ${id} no encontrado.`);
     }
-    res.status(200).json(medico);
+    return res.status(status).json(medico);
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
-export const crearMedico = (req: Request, res: Response, next: NextFunction): void => {
+export const crearMedico = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 201;
   try {
     const data = crearMedicoSchema.parse(req.body);
     const creado = medicosService.crear(data);
-    res.status(201).json(creado);
+    return res.status(status).json(creado);
   } catch (err) {
-    next(err);
+    status = 400;
+    return next(err);
   }
 };
 
-export const actualizarMedico = (req: Request, res: Response, next: NextFunction): void => {
+export const actualizarMedico = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 200;
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+      status = 400;
+      throw new AppError(status, 'INVALID_ID', 'El id debe ser un entero positivo.');
     }
     const cambios = actualizarMedicoSchema.parse(req.body);
     const actualizado = medicosService.actualizar(id, cambios);
     if (!actualizado) {
-      throw new AppError(404, 'NOT_FOUND', `Médico con id ${id} no encontrado.`);
+      status = 404;
+      throw new AppError(status, 'NOT_FOUND', `Médico con id ${id} no encontrado.`);
     }
-    res.status(200).json(actualizado);
+    return res.status(status).json(actualizado);
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
-export const eliminarMedico = (req: Request, res: Response, next: NextFunction): void => {
+export const eliminarMedico = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 204;
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+      status = 400;
+      throw new AppError(status, 'INVALID_ID', 'El id debe ser un entero positivo.');
     }
     const eliminado = medicosService.eliminar(id);
     if (!eliminado) {
-      throw new AppError(404, 'NOT_FOUND', `Médico con id ${id} no encontrado.`);
+      status = 404;
+      throw new AppError(status, 'NOT_FOUND', `Médico con id ${id} no encontrado.`);
     }
-    res.status(204).send();
+    return res.status(status).send();
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };

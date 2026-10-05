@@ -8,10 +8,6 @@ import {
 } from '../schemas/turno.schema.js';
 import type { Turno } from '../models/turno.model.js';
 
-/**
- * Convierte el input validado por Zod (especialidad en PascalCase)
- * al dominio interno (especialidad en minúsculas sin tildes).
- */
 const toDomain = (input: ReturnType<typeof crearTurnoSchema.parse>): Omit<Turno, 'id'> => {
   const map: Record<string, Turno['especialidad']> = {
     'Clínica médica': 'clinica medica',
@@ -30,47 +26,72 @@ const toDomain = (input: ReturnType<typeof crearTurnoSchema.parse>): Omit<Turno,
   };
 };
 
-export const getTurnos = (req: Request, res: Response, next: NextFunction): void => {
+export const getTurnos = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 200;
   try {
     const filtros = filtroTurnosSchema.parse(req.query);
     const turnos = turnosService.listar(filtros);
-    res.status(200).json(turnos);
+    return res.status(status).json(turnos);
   } catch (err) {
-    next(err);
+    status = 500;
+    return next(err);
   }
 };
 
-export const getTurnoPorId = (req: Request, res: Response, next: NextFunction): void => {
+export const getTurnoPorId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 200;
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+      status = 400;
+      throw new AppError(status, 'INVALID_ID', 'El id debe ser un entero positivo.');
     }
     const turno = turnosService.obtenerPorId(id);
     if (!turno) {
-      throw new AppError(404, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
+      status = 404;
+      throw new AppError(status, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
     }
-    res.status(200).json(turno);
+    return res.status(status).json(turno);
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
-export const crearTurno = (req: Request, res: Response, next: NextFunction): void => {
+export const crearTurno = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 201;
   try {
     const data = crearTurnoSchema.parse(req.body);
     const creado = turnosService.crear(toDomain(data));
-    res.status(201).json(creado);
+    return res.status(status).json(creado);
   } catch (err) {
-    next(err);
+    status = 400;
+    return next(err);
   }
 };
 
-export const actualizarTurno = (req: Request, res: Response, next: NextFunction): void => {
+export const actualizarTurno = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 200;
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+      status = 400;
+      throw new AppError(status, 'INVALID_ID', 'El id debe ser un entero positivo.');
     }
     const cambios = actualizarTurnoSchema.parse(req.body);
     const partial: Partial<Omit<Turno, 'id'>> = {};
@@ -92,26 +113,34 @@ export const actualizarTurno = (req: Request, res: Response, next: NextFunction)
 
     const actualizado = turnosService.actualizar(id, partial);
     if (!actualizado) {
-      throw new AppError(404, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
+      status = 404;
+      throw new AppError(status, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
     }
-    res.status(200).json(actualizado);
+    return res.status(status).json(actualizado);
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
-export const eliminarTurno = (req: Request, res: Response, next: NextFunction): void => {
+export const eliminarTurno = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response | void> => {
+  let status = 204;
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
-      throw new AppError(400, 'INVALID_ID', 'El id debe ser un entero positivo.');
+      status = 400;
+      throw new AppError(status, 'INVALID_ID', 'El id debe ser un entero positivo.');
     }
     const eliminado = turnosService.eliminar(id);
     if (!eliminado) {
-      throw new AppError(404, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
+      status = 404;
+      throw new AppError(status, 'NOT_FOUND', `Turno con id ${id} no encontrado.`);
     }
-    res.status(204).send();
+    return res.status(status).send();
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
