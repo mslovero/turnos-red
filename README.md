@@ -1,37 +1,71 @@
 # TurnosRed – Backend
 
-Backend para centralizar la gestión de turnos médicos de varias sedes de atención
-ambulatoria (clínica médica, pediatría, odontología y nutrición).
+> API REST profesional para centralizar la gestión de turnos médicos de varias sedes de atención
+> ambulatoria (clínica médica, pediatría, odontología, nutrición), con eventos en tiempo real,
+> validaciones robustas y arquitectura basada en Clean Architecture.
 
-- Node.js (LTS) + TypeScript estricto + ESM
-- Express para la API REST
-- Socket.IO para notificaciones en tiempo real
-- EventEmitter nativo como bus de eventos interno
-- Zod para validación de esquemas de entrada
-- Middleware global de errores con formato JSON estandarizado
+**Stack**: Node.js (LTS) · TypeScript estricto · ESM · Express · Socket.IO · Zod · EventEmitter
+
+**Repositorio**: https://github.com/mslovero/turnos-red
+
+---
+
+## Tabla de contenido
+
+1. [Requisitos previos](#requisitos-previos)
+2. [Instalación paso a paso](#instalación-paso-a-paso)
+3. [Variables de entorno](#variables-de-entorno)
+4. [Scripts npm disponibles](#scripts-npm-disponibles)
+5. [Estructura de carpetas](#estructura-de-carpetas-clean-architecture)
+6. [Documentación de la API REST](#documentación-de-la-api-rest)
+7. [Formato estándar de errores](#formato-estándar-de-errores)
+8. [Eventos en tiempo real (Socket.IO)](#eventos-en-tiempo-real-sockeio)
+9. [Colección Postman](#colección-postman-con-variables-de-entorno)
+10. [Propuesta de módulo Pacientes y Turnos](#propuesta-de-módulo-pacientes-y-turnos-mockup)
+11. [Uso de Inteligencia Artificial](#uso-de-inteligencia-artificial)
 
 ---
 
 ## Requisitos previos
 
-- [Node.js](https://nodejs.org/en/download) 20+ (LTS). Se recomienda [NVM](https://github.com/nvm-sh/nvm) y usar el `.nvmrc`:
+- [Node.js](https://nodejs.org/en/download) **20+** (LTS). Se recomienda [NVM](https://github.com/nvm-sh/nvm) y usar el archivo `.nvmrc` del proyecto:
   ```bash
   nvm install
   nvm use
   ```
-- npm 10+ (viene con Node). **No usar yarn ni pnpm**.
-- Git.
+- **npm 10+** (viene con Node). **No usar yarn ni pnpm**.
+- **Git**.
+- **Postman** (o la extensión Postman para VS Code) para las pruebas REST.
 
-## Instalación
+## Instalación paso a paso
 
 ```bash
+# 1. Clonar el repositorio
 git clone https://github.com/mslovero/turnos-red.git
 cd turnos-red
+
+# 2. Usar la versión correcta de Node
 nvm use
+
+# 3. Instalar dependencias
 npm install
+
+# 4. Preparar el archivo de variables de entorno
 cp env.example.txt .env
+
+# 5. Levantar el servidor en modo desarrollo (watch)
 npm run dev
 ```
+
+El servidor queda escuchando en `http://localhost:3000`.
+
+## Variables de entorno
+
+| Variable | Descripción | Valor por defecto |
+| --- | --- | --- |
+| `PORT` | Puerto HTTP del servidor Express + Socket.IO. | `3000` |
+| `TURNOS_FILE` | Ruta al JSON con los turnos crudos. | `./data/turnos.json` |
+| `NODE_ENV` | Entorno de ejecución (`development` / `production`). | `development` |
 
 ## Scripts npm disponibles
 
@@ -44,106 +78,110 @@ npm run dev
 | `npm run lint:fix` | Aplica fixes automáticos de ESLint. |
 | `npm run format` | Formatea `src/` con Prettier. |
 
-## Variables de entorno
-
-| Variable | Descripción | Valor por defecto |
-| --- | --- | --- |
-| `PORT` | Puerto HTTP del servidor Express + Socket.IO. | `3000` |
-| `TURNOS_FILE` | Ruta al JSON con los turnos crudos de las sedes. | `./data/turnos.json` |
-| `NODE_ENV` | Entorno de ejecución. | `development` |
-
-## Estructura de carpetas (todas en inglés)
+## Estructura de carpetas (Clean Architecture)
 
 ```
 turnos-red/
-├── .vscode/launch.json       # Configuración de debug para VS Code
-├── data/turnos.json          # Registros crudos de las sedes
-├── postman/                  # Colección exportada
+├── .vscode/launch.json           # Configuración de debug para VS Code
+├── data/turnos.json              # Registros crudos de las sedes
+├── postman/                      # Colección Postman
 │   └── turnos-red.postman_collection.json
-├── public/index.html         # Cliente web Socket.IO (demo)
+├── public/index.html             # Cliente web Socket.IO (demo)
 ├── src/
-│   ├── config/env.ts         # Variables de entorno
+│   ├── config/env.ts             # Variables de entorno
 │   ├── controllers/
+│   │   ├── general.controller.ts   # Hello World + 404
 │   │   ├── turnos.controller.ts
 │   │   └── medicos.controller.ts
-│   ├── events/eventBus.ts    # Bus de eventos EventEmitter tipado
+│   ├── events/eventBus.ts        # Bus EventEmitter tipado
 │   ├── middleware/
-│   │   ├── errorHandler.ts   # Middleware global de errores + AppError
-│   │   └── validate.ts       # Validación de req.body / req.query
+│   │   ├── errorHandler.ts       # Middleware global de errores + AppError
+│   │   └── validate.ts
 │   ├── models/
 │   │   ├── turno.model.ts
 │   │   └── medico.model.ts
 │   ├── routes/
 │   │   ├── turnos.routes.ts
 │   │   └── medicos.routes.ts
-│   ├── schemas/              # Zod schemas
+│   ├── schemas/                  # Zod schemas
 │   │   ├── turno.schema.ts
 │   │   └── medico.schema.ts
 │   ├── services/
 │   │   ├── turnos.service.ts
 │   │   └── medicos.service.ts
 │   ├── utils/
-│   │   ├── fileReader.ts     # Lectura asincrónica (fs/promises)
-│   │   └── normalizador.ts   # Coerción de tipos para datos crudos
-│   └── index.ts              # Bootstrap de la aplicación
+│   │   ├── fileReader.ts         # Lectura asincrónica (fs/promises)
+│   │   └── normalizador.ts
+│   └── index.ts                  # Bootstrap de la aplicación
+├── pacientes-turnos.md           # Propuesta técnica (TP4)
 ├── env.example.txt
-├── .gitignore
+├── .gitignore                    # Excluye node_modules, dist, .env
 ├── .nvmrc
+├── README.md
 └── package.json
 ```
 
-## Endpoints REST
+El archivo `.gitignore` asegura que **no se suban** al repositorio:
+
+- `node_modules/`
+- `dist/` (build compilado)
+- `.env`, `.env.local` (variables sensibles)
+
+---
+
+## Documentación de la API REST
+
+> URL base: `{{baseUrl}}` (recomendado `http://localhost:3000`).
+
+### Endpoint general
+
+| Método | Path | Descripción | Códigos |
+| --- | --- | --- | --- |
+| GET | `/` | Mensaje de bienvenida con índice de endpoints. | 200 |
+| GET | `/health` | Health-check del servicio. | 200 |
+
+**Ejemplo — GET /**
+
+```http
+GET {{baseUrl}}/
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "app": "TurnosRed API",
+  "version": "2.0.0",
+  "message": "¡Bienvenido/a a la API de TurnosRed!",
+  "endpoints": {
+    "turnos": "/turnos",
+    "medicos": "/medicos",
+    "health": "/health"
+  }
+}
+```
 
 ### Recurso `/turnos`
 
-| Método | Ruta | Descripción | Códigos |
+| Método | Path | Descripción | Códigos |
 | --- | --- | --- | --- |
 | GET | `/turnos` | Lista todos los turnos. Admite query params. | 200 |
 | GET | `/turnos/:id` | Obtiene un turno por id. | 200, 400, 404 |
 | POST | `/turnos` | Crea un turno (valida con Zod). | 201, 400 |
-| PUT | `/turnos/:id` | Actualiza un turno. | 200, 400, 404 |
+| PUT | `/turnos/:id` | Actualiza un turno (parcial). | 200, 400, 404 |
 | DELETE | `/turnos/:id` | Elimina un turno. | 204, 400, 404 |
 
-**Query params soportados en GET /turnos:**
+**Query params soportados en `GET /turnos`:**
 
-```
-GET /turnos?especialidad=Pediatría&fecha=14/08/2026&medicoId=1
-```
-
-### Recurso `/medicos`
-
-| Método | Ruta | Descripción | Códigos |
+| Param | Tipo | Descripción | Ejemplo |
 | --- | --- | --- | --- |
-| GET | `/medicos` | Lista todos los médicos. Admite query params. | 200 |
-| GET | `/medicos/:id` | Obtiene un médico por id. | 200, 400, 404 |
-| POST | `/medicos` | Registra un nuevo médico. | 201, 400 |
-| PUT | `/medicos/:id` | Actualiza un médico. | 200, 400, 404 |
-| DELETE | `/medicos/:id` | Da de baja un médico. | 204, 400, 404 |
+| `especialidad` | `string` (enum Title Case) | Filtra por especialidad. | `?especialidad=Pediatría` |
+| `fecha` | `string` | Filtra por fecha (`dd/mm/yyyy` o `YYYY-MM-DD`). | `?fecha=14/08/2026` |
+| `medicoId` | `number` | Filtra por médico asignado. | `?medicoId=1` |
 
-**Query params soportados en GET /medicos:**
+Combinable: `GET {{baseUrl}}/turnos?especialidad=Pediatría&fecha=14/08/2026&medicoId=1`
 
-```
-GET /medicos?especialidad=Odontología&disponible=true
-```
-
-### Formato estándar de errores
-
-Todas las respuestas de error devuelven el mismo contrato:
-
-```json
-{
-  "status": 400,
-  "message": "Error de validación en los datos ingresados",
-  "code": "VALIDATION_ERROR",
-  "details": [
-    { "field": "especialidad", "message": "...", "code": "invalid_enum_value" }
-  ]
-}
-```
-
-Códigos de error utilizados: `VALIDATION_ERROR`, `NOT_FOUND`, `INVALID_ID`, `INTERNAL_SERVER_ERROR`.
-
-### Payload de ejemplo (POST /turnos)
+**Body (POST /turnos / PUT /turnos/:id)**
 
 ```json
 {
@@ -157,9 +195,26 @@ Códigos de error utilizados: `VALIDATION_ERROR`, `NOT_FOUND`, `INVALID_ID`, `IN
 }
 ```
 
-Especialidades válidas (Title Case / PascalCase): `Clínica médica`, `Pediatría`, `Odontología`, `Nutrición`.
+Especialidades válidas (**Title Case**): `Clínica médica`, `Pediatría`, `Odontología`, `Nutrición`.
 
-### Payload de ejemplo (POST /medicos)
+### Recurso `/medicos`
+
+| Método | Path | Descripción | Códigos |
+| --- | --- | --- | --- |
+| GET | `/medicos` | Lista todos los médicos. Admite query params. | 200 |
+| GET | `/medicos/:id` | Obtiene un médico por id. | 200, 400, 404 |
+| POST | `/medicos` | Registra un nuevo médico. | 201, 400 |
+| PUT | `/medicos/:id` | Actualiza un médico (parcial). | 200, 400, 404 |
+| DELETE | `/medicos/:id` | Da de baja un médico. | 204, 400, 404 |
+
+**Query params soportados en `GET /medicos`:**
+
+| Param | Tipo | Descripción | Ejemplo |
+| --- | --- | --- | --- |
+| `especialidad` | `string` (enum Title Case) | Filtra por especialidad. | `?especialidad=Odontología` |
+| `disponible` | `boolean` | Filtra por disponibilidad. | `?disponible=true` |
+
+**Body (POST /medicos / PUT /medicos/:id)**
 
 ```json
 {
@@ -173,7 +228,36 @@ Especialidades válidas (Title Case / PascalCase): `Clínica médica`, `Pediatr�
 }
 ```
 
+---
+
+## Formato estándar de errores
+
+Todas las respuestas de error devuelven el **mismo contrato** JSON:
+
+```json
+{
+  "status": 400,
+  "message": "Error de validación en los datos ingresados",
+  "code": "VALIDATION_ERROR",
+  "details": [
+    { "field": "especialidad", "message": "...", "code": "invalid_enum_value" }
+  ]
+}
+```
+
+| `code` | Status HTTP | Significado |
+| --- | --- | --- |
+| `VALIDATION_ERROR` | 400 | Error de validación Zod (ver `details`). |
+| `INVALID_ID` | 400 | El `:id` no es un entero positivo. |
+| `NOT_FOUND` | 404 | Recurso no encontrado por id. |
+| `ROUTE_NOT_FOUND` | 404 | La ruta no está definida (controller general). |
+| `INTERNAL_SERVER_ERROR` | 500 | Error inesperado del servidor. |
+
+---
+
 ## Eventos en tiempo real (Socket.IO)
+
+Cada operación exitosa sobre `/turnos` emite un evento interno con `EventEmitter`, que es retransmitido vía Socket.IO a los clientes conectados:
 
 | Evento interno | Evento Socket.IO | Payload |
 | --- | --- | --- |
@@ -181,34 +265,65 @@ Especialidades válidas (Title Case / PascalCase): `Clínica médica`, `Pediatr�
 | `turno:actualizado` | `turno:actualizado` | `Turno` |
 | `turno:eliminado` | `turno:eliminado` | `{ id: number }` |
 
-Cliente de prueba: abrir `public/index.html` en el navegador mientras el servidor corre.
+**Cliente de prueba**: abrir `public/index.html` en el navegador mientras el servidor corre. La página se conecta por WebSocket y muestra cada evento en vivo sin recargar.
 
-## Colección Postman
+---
 
-El archivo `postman/turnos-red.postman_collection.json` contiene:
+## Colección Postman con variables de entorno
 
-- Variables de entorno (`baseUrl`, `turnoId`, `medicoId`).
-- Scripts de test con aserciones (status code, estructura JSON).
+El archivo `postman/turnos-red.postman_collection.json` ya contiene **variables centralizadas**:
+
+- **`{{baseUrl}}`** → `http://localhost:3000` (editable desde Postman).
+- **`{{turnoId}}`** → se setea automáticamente desde el POST de turno (test script).
+- **`{{medicoId}}`** → se setea automáticamente desde el POST de médico.
+
+Todas las peticiones utilizan la sintaxis `{{baseUrl}}/turnos`, `{{baseUrl}}/medicos/:id`, etc., evitando URLs duras. Si cambia el host (por ejemplo al pasar a staging), solo hay que editar la variable `baseUrl` una sola vez.
+
+**Importar en Postman:**
+
+1. Abrir Postman → *Collections* → *Import*.
+2. Seleccionar `postman/turnos-red.postman_collection.json`.
+3. En *Variables* confirmar que `baseUrl = http://localhost:3000`.
+4. Ejecutar el request **GET /turnos** → debería devolver `200 OK` y mostrar los tests en verde (PASS).
+
+La collection incluye:
+
+- Variables de entorno de colección.
+- Scripts de test con aserciones (`pm.test`).
 - Escenarios Happy Path y de error (Bad Request, Not Found, Validation).
-- Ejemplos de respuestas listos para usar como Mock Server.
+- Ejemplos de respuestas listos para usar como **Mock Server**.
 
-Importar en Postman desde: Collections → Import → seleccionar el archivo JSON.
+---
+
+## Propuesta de módulo Pacientes y Turnos (mockup)
+
+La propuesta técnica para los nuevos recursos **`/pacientes`** y **`/turnos-medicos`** está documentada en el archivo [`pacientes-turnos.md`](./pacientes-turnos.md) de la raíz del repositorio. Incluye:
+
+- Modelado conceptual de ambas entidades.
+- Interfaces TypeScript propuestas.
+- Definición de los nuevos endpoints REST (métodos, paths, body, códigos).
+- Reglas de negocio.
+- Impacto en la estructura de carpetas Clean Architecture.
+
+---
 
 ## Uso de Inteligencia Artificial
 
-Durante el desarrollo de esta actividad se utilizó Claude (Anthropic) como asistente de código. A continuación se detallan los principales usos:
+Durante el desarrollo de este proyecto se utilizó Claude (Anthropic) como asistente de código. Los principales usos:
 
-| Tarea | Herramienta | Prompt | Respuesta generada | Ajuste manual aplicado |
+| Tarea | Herramienta | Prompt | Respuesta generada | Ajuste manual |
 | --- | --- | --- | --- | --- |
-| Diseño de la estructura en capas en inglés | Claude | "Armá la arquitectura de un backend TypeScript con separación en routes/controllers/services/schemas/models para los recursos Turno y Medico." | Esqueleto completo de carpetas y archivos con imports relativos y `type: module`. | Ajuste de extensiones `.js` en imports para que funcione con ESM + Node 20. |
-| Schemas Zod para Turno y Medico | Claude | "Armá los schemas Zod para validar: id positivo, documento sólo dígitos, fecha ISO, hora HH:MM, especialidad en PascalCase (`Clínica médica`, `Pediatría`, `Odontología`, `Nutrición`)." | Zod con `z.object`, `.regex`, `.enum` y mensajes de error en español. | Se agregó mapeo PascalCase → minúsculas para el dominio interno (compatibilidad con normalizador existente). |
-| Middleware de errores estandarizado | Claude | "Necesito un middleware Express que capture errores de Zod y AppError y devuelva siempre `{status, message, code, details}`." | Implementación con detección por `instanceof ZodError` y `AppError`. | Agregado `notFoundHandler` adicional y log de errores no controlados. |
-| Filtros por query params | Claude | "En el service de turnos agregá filtros por `especialidad`, `fecha` (acepta dd/mm/yyyy y YYYY-MM-DD) y `medicoId` sin romper el listado base." | Service con `.filter()` encadenado y función auxiliar `normalizarFechaFiltro`. | Se agregó compatibilidad hacia atrás: especialidad PascalCase del input se convierte al valor interno. |
-| Colección Postman con tests | Claude | "Armá una collection Postman v2.1.0 con variables de entorno, scripts de test en JS, happy paths y escenarios de error para los dos recursos." | JSON válido con `pm.test`, aserciones de status y schema. | Ajuste del `collectionVariables.set` para encadenar IDs creados entre requests (POST→PUT→DELETE). |
-| Documentación README | Claude | "Actualizá el README incluyendo endpoints, formato de errores, query params y tabla de IA." | README en Markdown con tablas y ejemplos. | Revisión y ajuste de ejemplos para que coincidan con las especialidades Title Case del dominio. |
+| Arquitectura en capas en inglés | Claude | "Armá un backend TypeScript con routes/controllers/services/schemas/models para Turno y Medico." | Esqueleto completo con ESM. | Ajuste de extensiones `.js` en imports. |
+| Schemas Zod | Claude | "Armá schemas Zod con especialidades en Title Case (Clínica médica, etc.)." | Zod con `.enum`, `.regex` y mensajes en español. | Mapeo PascalCase → interno. |
+| Middleware de errores | Claude | "Necesito un middleware Express que capture ZodError y AppError y devuelva {status, message, code, details}." | Implementación con `instanceof`. | Agregado `notFoundController` y logs. |
+| Refactor a controllers async | Claude | "Refactorizá los controllers a async con status dinámico, validaciones previas con throw AppError y return explícito." | Controllers con try/catch, `let status`, `throw new AppError`, `return res.status().json()`. | Ajuste del status en el bloque catch del POST (400 por defecto). |
+| Documentación README y mockup | Claude | "Generá el markdown del README y del pacientes-turnos.md documentando endpoints con método, path, body y códigos." | Markdown con tablas, bloques typescript/json y navegación. | Revisión de ejemplos de JSON y traducción al dominio real. |
+| Colección Postman | Claude | "Armá la collection v2.1.0 con variables baseUrl, scripts de test y escenarios happy/unhappy." | JSON válido con `pm.test` y `collectionVariables.set`. | Ajuste de encadenamiento POST→PUT→DELETE con IDs dinámicos. |
 
-**Reflexión personal**: la IA aceleró significativamente el scaffolding y la escritura de boilerplate. El valor humano estuvo en: definir la arquitectura, validar coherencia entre capas, revisar los casos borde (fechas en distintos formatos, especialidades con/sin tildes), y asegurar que el código generado se integre con lo que ya existía del TP1 (normalizador, EventEmitter, Socket.IO).
+**Reflexión personal**: la IA aceleró significativamente el scaffolding, la escritura de boilerplate y la documentación. El valor humano estuvo en definir la arquitectura, validar coherencia entre capas, revisar casos borde (fechas en distintos formatos, especialidades con/sin tildes) y asegurar la integración con el código previo.
+
+---
 
 ## Autora
 
-María Soledad Lovero – Octubre 2026.
+**María Soledad Lovero** – Materia Integraciones Web – Octubre 2026.
